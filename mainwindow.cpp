@@ -6,12 +6,13 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    sdpFetch = new SdpFetch(this);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-     sdpFetch = new SdpFetch(this);
 
-
+    sdpFetch->deleteLater();
 }

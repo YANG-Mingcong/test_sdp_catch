@@ -18,6 +18,9 @@ private:
     QHostAddress sapAddress4;
     QString sapPort;
 
+private slots:
+           void processPendingDatagrams();
+
 
 signals:
 };
