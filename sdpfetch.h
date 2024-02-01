@@ -14,13 +14,15 @@ public:
     explicit SdpFetch(QObject *parent = nullptr);
     QByteArray sdpRaw;
 
+    ~SdpFetch();
+
 private:
     QUdpSocket udpSocket4;
     QHostAddress sapAddress4;
     QString sapPort;
 
 private slots:
-           void processPendingDatagrams();
+    void processPendingDatagrams();
 
 
 signals:

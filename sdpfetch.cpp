@@ -15,6 +15,20 @@ SdpFetch::SdpFetch(QObject *parent)
             this, &SdpFetch::processPendingDatagrams);
 }
 
+SdpFetch::~SdpFetch()
+{
+    disconnect(&udpSocket4, &QUdpSocket::readyRead,
+               this, &SdpFetch::processPendingDatagrams);
+
+    udpSocket4.leaveMulticastGroup(sapAddress4);
+
+    udpSocket4.deleteLater();
+    sapPort.clear();
+    sapAddress4.clear();
+
+    sdpRaw.clear();
+}
+
 void SdpFetch::processPendingDatagrams()
 {
     QByteArray datagram;
