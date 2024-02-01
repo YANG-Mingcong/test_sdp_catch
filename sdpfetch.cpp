@@ -22,7 +22,12 @@ void SdpFetch::processPendingDatagrams()
     while(udpSocket4.hasPendingDatagrams()) {
         datagram.resize(qsizetype(udpSocket4.pendingDatagramSize()));
         udpSocket4.readDatagram(datagram.data(), datagram.size());
+
+        sdpRaw.clear();
+        sdpRaw.append(datagram);
+
         qDebug() << tr("SAP datagram: ");
-        qDebug() << datagram.toStdString();
+        // qDebug() << datagram.toStdString();
+        qDebug() << sdpRaw.toStdString();
     }
 }

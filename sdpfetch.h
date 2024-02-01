@@ -12,6 +12,7 @@ class SdpFetch : public QObject
     Q_OBJECT
 public:
     explicit SdpFetch(QObject *parent = nullptr);
+    QByteArray sdpRaw;
 
 private:
     QUdpSocket udpSocket4;
