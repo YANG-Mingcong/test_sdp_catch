@@ -20,6 +20,8 @@ private:
     QUdpSocket udpSocket4;
     QHostAddress sapAddress4;
     QString sapPort;
+    void sapParser(QByteArray);
+
 private slots:
     void processPendingDatagrams();
 
