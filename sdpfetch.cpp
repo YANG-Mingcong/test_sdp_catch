@@ -26,7 +26,7 @@ SdpFetch::~SdpFetch()
     sapPort.clear();
     sapAddress4.clear();
 
-    sdpRaw.clear();
+    sapRaw.clear();
 }
 
 void SdpFetch::processPendingDatagrams()
@@ -37,12 +37,12 @@ void SdpFetch::processPendingDatagrams()
         datagram.resize(qsizetype(udpSocket4.pendingDatagramSize()));
         udpSocket4.readDatagram(datagram.data(), datagram.size());
 
-        sdpRaw.clear();
-        sdpRaw.append(datagram);
+        sapRaw.clear();
+        sapRaw.append(datagram);
 
         qDebug() << tr("SAP datagram: ");
         // qDebug() << datagram.toStdString();
-        qDebug() << sdpRaw;
+        qDebug() << sapRaw;
 
         qDebug() << tr("SAP header: ");
         for (int i = 0; i < 8; ++i)

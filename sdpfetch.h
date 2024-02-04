@@ -12,7 +12,7 @@ class SdpFetch : public QObject
     Q_OBJECT
 public:
     explicit SdpFetch(QObject *parent = nullptr);
-    QByteArray sdpRaw;
+    QByteArray sapRaw;
 
     ~SdpFetch();
 
@@ -20,7 +20,6 @@ private:
     QUdpSocket udpSocket4;
     QHostAddress sapAddress4;
     QString sapPort;
-
 private slots:
     void processPendingDatagrams();
 
