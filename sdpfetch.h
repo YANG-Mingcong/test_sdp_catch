@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QHostAddress>
 #include <QUdpSocket>
+#include <QMap>
 
 
 
@@ -16,14 +17,18 @@ public:
 
     ~SdpFetch();
 
+private slots:
+    void processPendingDatagrams();
+
 private:
     QUdpSocket udpSocket4;
     QHostAddress sapAddress4;
     QString sapPort;
-    void sapParser(QByteArray);
+    QMap<QByteArray, QDateTime>sdpRawMap;
 
-private slots:
-    void processPendingDatagrams();
+    void sapParser(QByteArray);
+    void sdpRawMapInit();
+    void sdpRawMapAdd(QByteArray);
 
 
 signals:

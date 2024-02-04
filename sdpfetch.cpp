@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QtEndian>
+#include <QDateTime>
 
 SdpFetch::SdpFetch(QObject *parent)
     : QObject{parent}
@@ -29,6 +30,32 @@ SdpFetch::~SdpFetch()
 
     sapRaw.clear();
 }
+
+void SdpFetch::processPendingDatagrams()
+{
+    QByteArray datagram;
+
+    while(udpSocket4.hasPendingDatagrams()) {
+        datagram.resize(qsizetype(udpSocket4.pendingDatagramSize()));
+        udpSocket4.readDatagram(datagram.data(), datagram.size());
+
+        sapRaw.clear();
+        sapRaw.append(datagram);
+
+        qDebug() << tr("SAP datagram: ");
+        // qDebug() << datagram.toStdString();
+        qDebug() << sapRaw;
+
+        qDebug() << tr("SAP header: ");
+        for (int i = 0; i < 8; ++i)
+        {
+            qDebug().noquote() << QString("%1 ").arg(static_cast<quint8>(datagram[i]), 8, 2, QChar('0'));
+        }
+
+        SdpFetch::sapParser(sapRaw);
+    }
+}
+
 
 void SdpFetch::sapParser(QByteArray _datagram)
 {
@@ -81,29 +108,33 @@ void SdpFetch::sapParser(QByteArray _datagram)
     qDebug() << "Optional Authentication Data:" << authData.toHex();
     qDebug() << "Optional Payload Type:" << payloadType;
     qDebug() << "Payload:" << payload.toHex();
+
+
+    if(!tBit)
+    {
+        // add or update sdpRawMap
+    }
+    else
+    {
+        //delete sdpRawMap
+    }
+
 }
 
-void SdpFetch::processPendingDatagrams()
+void SdpFetch::sdpRawMapInit()
 {
-    QByteArray datagram;
+    sdpRawMap.clear();
+}
 
-    while(udpSocket4.hasPendingDatagrams()) {
-        datagram.resize(qsizetype(udpSocket4.pendingDatagramSize()));
-        udpSocket4.readDatagram(datagram.data(), datagram.size());
-
-        sapRaw.clear();
-        sapRaw.append(datagram);
-
-        qDebug() << tr("SAP datagram: ");
-        // qDebug() << datagram.toStdString();
-        qDebug() << sapRaw;
-
-        qDebug() << tr("SAP header: ");
-        for (int i = 0; i < 8; ++i)
-        {
-            qDebug().noquote() << QString("%1 ").arg(static_cast<quint8>(datagram[i]), 8, 2, QChar('0'));
-        }
-
-        SdpFetch::sapParser(sapRaw);
+void SdpFetch::sdpRawMapAdd(QByteArray _sapPayload)
+{
+    if(!sdpRawMap.contains(_sapPayload))
+    {
+        sdpRawMap[_sapPayload] = QDateTime::currentDateTime();
+    }
+    else
+    {
+        sdpRawMap.insert(_sapPayload, QDateTime::currentDateTime());
     }
 }
+
