@@ -42,6 +42,12 @@ void SdpFetch::processPendingDatagrams()
 
         qDebug() << tr("SAP datagram: ");
         // qDebug() << datagram.toStdString();
-        qDebug() << sdpRaw.toStdString();
+        qDebug() << sdpRaw;
+
+        qDebug() << tr("SAP header: ");
+        for (int i = 0; i < 8; ++i)
+        {
+            qDebug().noquote() << QString("%1 ").arg(static_cast<quint8>(datagram[i]), 8, 2, QChar('0'));
+        }
     }
 }
