@@ -4,6 +4,26 @@
 #include <QtEndian>
 #include <QDateTime>
 
+struct sdpOrigin
+{
+    QString username;
+    QString sessId;
+    qint16  sessVersion;
+    QString nettype;
+    QString addrtype;
+    QString unicastAddress;
+};
+
+struct SDP
+{
+    int         version;
+    QDateTime   updateTimestamp;
+};
+
+QMap<QByteArray, QDateTime> sdpRawMap;
+
+
+
 SdpFetch::SdpFetch(QObject *parent)
     : QObject{parent}
 {
@@ -15,6 +35,8 @@ SdpFetch::SdpFetch(QObject *parent)
 
     connect(&udpSocket4, &QUdpSocket::readyRead,
             this, &SdpFetch::processPendingDatagrams);
+
+
 }
 
 SdpFetch::~SdpFetch()
@@ -67,13 +89,13 @@ void SdpFetch::sapParser(QByteArray _datagram)
 
     // 解析版本和标志
     quint8 versionAndFlags = _datagram.at(0);
-    quint8 version = (versionAndFlags >> 5) & 0x07;
-    bool aBit = (versionAndFlags & 0x04) != 0;
-    bool rBit = (versionAndFlags & 0x02) != 0;
-    bool tBit = (versionAndFlags & 0x01) != 0;
-    bool authFlag = (versionAndFlags & 0x10) != 0;
-    bool encryptionFlag = (versionAndFlags & 0x08) != 0;
-    bool cBit = (versionAndFlags & 0x02) != 0; // Compressed Bit
+    quint8 version = (versionAndFlags >> 5) & 0x07;  // Extracting the top 3 bits
+    bool aBit = (versionAndFlags & 0x10) != 0;  // Extracting the 4th bit (A)
+    bool rBit = (versionAndFlags & 0x08) != 0;  // Extracting the 5th bit (R)
+    bool tBit = (versionAndFlags & 0x04) != 0;  // Extracting the 6th bit (T)
+    bool encryptionFlag = (versionAndFlags & 0x02) != 0;  // Extracting the 7th bit (E)
+    bool cBit = (versionAndFlags & 0x01) != 0;  // Extracting the 8th bit (C)
+
 
     // 解析认证数据长度
     quint8 authLen = _datagram.at(1);
@@ -99,9 +121,8 @@ void SdpFetch::sapParser(QByteArray _datagram)
     qDebug() << "A Bit (Address Type):" << aBit;
     qDebug() << "R Bit (Reserved):" << rBit;
     qDebug() << "T Bit (Message Type):" << tBit;
-    qDebug() << "C Bit (Compressed):" << cBit;
-    qDebug() << "Authentication Flag:" << authFlag;
     qDebug() << "Encryption Flag:" << encryptionFlag;
+    qDebug() << "C Bit (Compressed):" << cBit;
     qDebug() << "Authentication Data Length:" << authLen;
     qDebug() << "Message ID Hash:" << msgIdHash;
     qDebug() << "Originating Source:" << originatingSource.toHex();
@@ -113,11 +134,19 @@ void SdpFetch::sapParser(QByteArray _datagram)
     if(!tBit)
     {
         // add or update sdpRawMap
+        this->sdpRawMapAnnouncement(payload);
     }
     else
     {
         //delete sdpRawMap
+        this->sdpRawMapDeletion(payload);
     }
+
+    qInfo() << "sdpRawMap: \n"
+            << QDateTime::currentDateTime().toString()
+            << "\n"
+            << sdpRawMap;
+
 
 }
 
@@ -126,15 +155,32 @@ void SdpFetch::sdpRawMapInit()
     sdpRawMap.clear();
 }
 
-void SdpFetch::sdpRawMapAdd(QByteArray _sapPayload)
+void SdpFetch::sdpRawMapAnnouncement(QByteArray _sapPayload)
 {
     if(!sdpRawMap.contains(_sapPayload))
     {
+        qDebug() << "sdpRawMapAnnouncement: - Not found";
         sdpRawMap[_sapPayload] = QDateTime::currentDateTime();
+        qDebug() << "sdpRawMapAnnouncement:" << _sapPayload.toStdString();
     }
     else
     {
+        qDebug() << "sdpRawMapAnnouncement: - found";
         sdpRawMap.insert(_sapPayload, QDateTime::currentDateTime());
+        qDebug() << "sdpRawMapAnnouncement:" << _sapPayload.toStdString();
+    }
+}
+
+void SdpFetch::sdpRawMapDeletion(QByteArray _sapPayload)
+{
+    if(!sdpRawMap.contains(_sapPayload))
+    {
+        qDebug() << "sdpRawMapDeletion: - Not found";
+    }
+    {
+        qDebug() << "sdpRawMapDeletion: - found";
+        sdpRawMap.remove(_sapPayload);
+        qDebug() << "sdpRawMapDeleted" << _sapPayload.toStdString();
     }
 }
 

@@ -17,6 +17,9 @@ public:
 
     ~SdpFetch();
 
+
+
+
 private slots:
     void processPendingDatagrams();
 
@@ -24,11 +27,12 @@ private:
     QUdpSocket udpSocket4;
     QHostAddress sapAddress4;
     QString sapPort;
-    QMap<QByteArray, QDateTime>sdpRawMap;
 
     void sapParser(QByteArray);
     void sdpRawMapInit();
-    void sdpRawMapAdd(QByteArray);
+    void sdpRawMapAnnouncement(QByteArray);
+    void sdpRawMapDeletion(QByteArray);
+
 
 
 signals:
