@@ -22,6 +22,11 @@ public:
     void setSdpRawMapTimeoutSecond();
     qint16 getSdpRawMapTimeoutSecond;
 
+    void sdpRawManuleAdd(QByteArray);
+    void sdpRawManuleDelete(QByteArray);
+
+    QMap<QByteArray, QDateTime> getSdpRawMap() const;
+
 
 private slots:
     void processPendingDatagrams();
@@ -37,6 +42,12 @@ private:
     void sdpRawMapInit();
     void sdpRawMapAnnouncement(QByteArray);
     void sdpRawMapDeletion(QByteArray);
+
+    void sdpRawMapAdd(QByteArray, bool);
+    void sdpRawMapUpdate(QByteArray);
+    void sdpRawMapDelete(QByteArray);
+    bool sdpRawMapContain(QByteArray);
+
 
     QTimer *timer;
     qint16 sdpRawMapTimeoutSecond;
