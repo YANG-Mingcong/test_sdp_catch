@@ -4,6 +4,7 @@
 #include <QtEndian>
 #include <QDateTime>
 
+
 struct sdpOrigin
 {
     QString username;
@@ -23,7 +24,6 @@ struct SDP
 QMap<QByteArray, QDateTime> sdpRawMap;
 
 
-
 SdpFetch::SdpFetch(QObject *parent)
     : QObject{parent}
 {
@@ -36,6 +36,11 @@ SdpFetch::SdpFetch(QObject *parent)
     connect(&udpSocket4, &QUdpSocket::readyRead,
             this, &SdpFetch::processPendingDatagrams);
 
+    sdpRawMapTimeoutSecond = 30;
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this,
+            &SdpFetch::checkTimeout);
+    timer->start(5000); // 启动定时器，设定1000毫秒（即1秒）的定时周期
 
 }
 
@@ -51,6 +56,11 @@ SdpFetch::~SdpFetch()
     sapAddress4.clear();
 
     sapRaw.clear();
+
+    if (timer) {
+        timer->stop();
+        delete timer;
+    }
 }
 
 void SdpFetch::processPendingDatagrams()
@@ -78,6 +88,37 @@ void SdpFetch::processPendingDatagrams()
     }
 }
 
+void SdpFetch::checkTimeout()
+{
+    // 尝试加锁，如果不能获得锁，说明上一次处理还未完成，跳过本次事件
+    if (!sdpRawMapMutex.tryLock()) {
+        qDebug() << "Failed to acquire lock, skipping event";
+        return;
+    }
+
+    // 获取当前时间的秒数
+    qint64 currentSeconds = QDateTime::currentSecsSinceEpoch();
+
+    // 遍历 QMap，检查每个条目是否超时
+    QMapIterator<QByteArray, QDateTime> iter(sdpRawMap);
+    while (iter.hasNext()) {
+        iter.next();
+
+        // 计算时间差，以秒为单位
+        qint64 elapsedTime = iter.value().secsTo(QDateTime::fromSecsSinceEpoch(currentSeconds));
+
+        // 如果时间差大于等于你的超时阈值，执行相应的操作
+        if (elapsedTime >= sdpRawMapTimeoutSecond) {
+            // 超时处理逻辑
+            qDebug() << "Entry" << iter.key() << "is out of time!";
+            // 可以在这里删除超时的条目，例如 sdpRawMap.remove(iter.key());
+            sdpRawMap.remove(iter.key());
+        }
+    }
+
+    // 解锁
+    sdpRawMapMutex.unlock();
+}
 
 void SdpFetch::sapParser(QByteArray _datagram)
 {
@@ -157,6 +198,8 @@ void SdpFetch::sdpRawMapInit()
 
 void SdpFetch::sdpRawMapAnnouncement(QByteArray _sapPayload)
 {
+    QMutexLocker locker(&sdpRawMapMutex); // 加锁
+
     if(!sdpRawMap.contains(_sapPayload))
     {
         qDebug() << "sdpRawMapAnnouncement: - Not found";
@@ -173,10 +216,13 @@ void SdpFetch::sdpRawMapAnnouncement(QByteArray _sapPayload)
 
 void SdpFetch::sdpRawMapDeletion(QByteArray _sapPayload)
 {
+    QMutexLocker locker(&sdpRawMapMutex); // 加锁
+
     if(!sdpRawMap.contains(_sapPayload))
     {
         qDebug() << "sdpRawMapDeletion: - Not found";
     }
+    else
     {
         qDebug() << "sdpRawMapDeletion: - found";
         sdpRawMap.remove(_sapPayload);
