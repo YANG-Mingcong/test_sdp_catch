@@ -11,11 +11,14 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    sdpfetch.cpp
+    sdpfetch.cpp \
+    sdpparser.cpp
 
 HEADERS += \
+    SdpStructures.h \
     mainwindow.h \
-    sdpfetch.h
+    sdpfetch.h \
+    sdpparser.h
 
 FORMS += \
     mainwindow.ui
