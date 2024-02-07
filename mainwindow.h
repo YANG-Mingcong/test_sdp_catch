@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "sdpparser.h"
+
 #include "sdpfetch.h"
 
 QT_BEGIN_NAMESPACE
@@ -19,9 +21,14 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     SdpFetch* sdpFetch;
+
+    SdpParser* sdpParser;
 };
 #endif // MAINWINDOW_H
