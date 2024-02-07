@@ -60,6 +60,7 @@ struct SdpMediaType //currently "audio", "video", "text", "application", and "me
 
     QString contentTypeString;
 
+    SdpMediaType() : contentTypeString("audio") {};
     SdpMediaType(ContentType type) {
 
         switch (type) {
@@ -79,7 +80,7 @@ struct SdpMediaType //currently "audio", "video", "text", "application", and "me
             contentTypeString = "message";
             break;
         default:
-            // 如果有其他值，你可以在这里进行适当的处理
+            contentTypeString = "";
             break;
         }
     }
@@ -94,7 +95,7 @@ struct SdpMediaTransportProtocol
     };
 
     QString contentTypeString;
-
+    SdpMediaTransportProtocol() : contentTypeString("RTP/AVP") {};
     SdpMediaTransportProtocol(ContentProtocol type) {
 
         switch (type) {
@@ -108,7 +109,7 @@ struct SdpMediaTransportProtocol
             contentTypeString = "RTP/SAVP";
             break;
         default:
-            // 如果有其他值，你可以在这里进行适当的处理
+            contentTypeString = "";
             break;
         }
     }

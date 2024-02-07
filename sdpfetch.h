@@ -25,7 +25,10 @@ public:
     void sdpRawManuleAdd(QByteArray);
     void sdpRawManuleDelete(QByteArray);
 
-    QMap<QByteArray, QDateTime> getSdpRawMap() const;
+    QMap<QByteArray, QDateTime> getSdpRawMap();
+
+    quint16 getSdpRawMapSize();
+    QList<QByteArray> getSdpRawMapKeyList();
 
 
 private slots:

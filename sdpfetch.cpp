@@ -253,12 +253,30 @@ void SdpFetch::sdpRawManuleDelete(QByteArray _data)
     }
 }
 
-QMap<QByteArray, QDateTime> SdpFetch::getSdpRawMap() const
+QMap<QByteArray, QDateTime> SdpFetch::getSdpRawMap()
 {
     QMutexLocker locker(&sdpRawMapMutex); // 加锁
 
     // 创建 sdpRawMap 的副本并返回
     return sdpRawMap;
+}
+
+quint16 SdpFetch::getSdpRawMapSize()
+{
+    return sdpRawMap.size();
+}
+
+QList<QByteArray> SdpFetch::getSdpRawMapKeyList()
+{
+    QList<QByteArray> _return;
+
+    QMapIterator<QByteArray, QDateTime> iter(sdpRawMap);
+    while (iter.hasNext()) {
+        iter.next();
+
+        _return.append(iter.key());
+    }
+    return _return;
 }
 
 
