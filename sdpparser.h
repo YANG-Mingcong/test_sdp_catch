@@ -4,11 +4,14 @@
 #include <QObject>
 #include "SdpStructures.h"
 
+#include <QRegularExpression>
+
 class SdpParser : public QObject
 {
     Q_OBJECT
 public:
     explicit SdpParser(QObject *parent = nullptr, const QByteArray& sdpRaw = QByteArray());
+    ~SdpParser();
 
     void sdpSplitTest();
 
@@ -19,7 +22,23 @@ private:
     QByteArray sdpTimeDescription;
     QByteArray sdpMediaDescription;
 
-    void sdpSplitter(QByteArray);
+    QRegularExpression sessionRegex;
+    QRegularExpression timeRegex;
+    QRegularExpression mediaRegex;
+
+
+
+    QRegularExpression timingRegex;
+    QRegularExpression repeatRegex;
+
+    void sdpSplitter(const QByteArray&);
+
+
+    void sdpTimeDescriptionParser();
+
+    SDP *sdp;
+
+    void printSDP();
 
 signals:
 };
