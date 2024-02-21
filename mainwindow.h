@@ -22,7 +22,13 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_clicked();
+    void on_btn_sdpParser_clicked();
+
+    void on_btn_addSdp_clicked();
+
+    void on_btn_delSdp_clicked();
+
+    void on_btn_sdpParserTest_clicked();
 
 private:
     Ui::MainWindow *ui;

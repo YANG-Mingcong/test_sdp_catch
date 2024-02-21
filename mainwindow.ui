@@ -6,25 +6,135 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1000</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QFrame" name="frameSDP">
     <property name="geometry">
      <rect>
-      <x>290</x>
-      <y>240</y>
+      <x>10</x>
+      <y>350</y>
+      <width>971</width>
+      <height>381</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QPushButton" name="btn_delSdp">
+     <property name="geometry">
+      <rect>
+       <x>120</x>
+       <y>310</y>
+       <width>100</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Delete SDP</string>
+     </property>
+    </widget>
+    <widget class="QPlainTextEdit" name="sdpInputArea">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>450</width>
+       <height>300</height>
+      </rect>
+     </property>
+     <property name="documentTitle">
+      <string/>
+     </property>
+     <property name="plainText">
+      <string>v=0
+o=- 1 2871560083 IN IP4 192.168.10.17
+s=BD12_stream_1_test
+t=0 0
+m=audio 5004 RTP/AVP 98
+i=Stream 1 test
+c=IN IP4 239.69.12.1/128
+a=source-filter: incl IN IP4 239.69.12.1 192.168.10.17
+a=rtpmap:98 L24/48000/8
+a=sync-time:0
+a=clock-domain:PTPv2 0
+a=framecount:7
+a=recvonly
+a=mediaclk:direct=0
+a=ts-refclk:ptp=IEEE1588-2008:A0-BB-3E-FF-FE-20-13-B8:0
+a=ptime:0.14
+a=maxptime:0.14
+</string>
+     </property>
+    </widget>
+    <widget class="QPlainTextEdit" name="sdpParserOutput">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>510</x>
+       <y>10</y>
+       <width>450</width>
+       <height>300</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="plainText">
+      <string/>
+     </property>
+     <property name="overwriteMode">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_addSdp">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>310</y>
+       <width>100</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Add SDP</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_sdpParserTest">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>310</y>
+       <width>100</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>SdpParser-&gt;</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="btn_sdpParser">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>300</y>
       <width>100</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>PushButton</string>
+     <string>SdpParser</string>
     </property>
    </widget>
   </widget>
@@ -33,7 +143,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1000</width>
      <height>24</height>
     </rect>
    </property>

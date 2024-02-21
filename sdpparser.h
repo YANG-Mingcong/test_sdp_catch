@@ -14,6 +14,7 @@ public:
     ~SdpParser();
 
     void sdpSplitTest();
+    QString getParserResult();
 
 private:
     QByteArray sdpRaw;
@@ -26,19 +27,27 @@ private:
     QRegularExpression timeRegex;
     QRegularExpression mediaRegex;
 
-
+    QRegularExpression versionRegex;
+    QRegularExpression originRegex;
+    QRegularExpression sessionNameRegex;
+    QRegularExpression sessionOptionRegex;
+    QRegularExpression sessionConnectionRegex;
 
     QRegularExpression timingRegex;
     QRegularExpression repeatRegex;
 
     void sdpSplitter(const QByteArray&);
 
-
+    void sdpSessionDescriptionParser();
     void sdpTimeDescriptionParser();
+
+    void sdpSessionConnectionInfoParser(QString);
 
     SDP *sdp;
 
     void printSDP();
+
+    QHostAddress ipv6AddressShift(const QHostAddress& , quint16);
 
 signals:
 };

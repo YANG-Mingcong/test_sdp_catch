@@ -8,7 +8,7 @@ struct SdpOrigin
 {
     QString username;
     QString sessId;
-    qint16  sessVersion;
+    QString  sessVersion;
     QString nettype;
     QString addrtype;
     QString unicastAddress;
@@ -19,7 +19,7 @@ struct SdpConnectionData
     QString nettype;
     QString addrtype;
     QHostAddress connectionAddress;
-    qint16 connctionTtl;
+    qint16 connectionTtl;
 };
 
 struct SdpAttributes
@@ -145,7 +145,7 @@ struct SDP
     QString                     repeatTimes;        //*(zero or more repeat times) ONLY STRING,NO FUNCTION
 
     SdpMedia                    media;              //(media name and transport address)
-    SdpMediaOption              mdiaOptions;        //*
+    SdpMediaOption              mediaOptions;        //*
 };
 
 #endif // SDPSTRUCTURES_H
