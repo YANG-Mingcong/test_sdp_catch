@@ -84,6 +84,14 @@ struct SdpMediaType //currently "audio", "video", "text", "application", and "me
             break;
         }
     }
+
+    bool isValidType() const {
+        return contentTypeString == "audio" ||
+               contentTypeString == "video" ||
+               contentTypeString == "text" ||
+               contentTypeString == "application" ||
+               contentTypeString == "message";
+    }
 };
 
 struct SdpMediaTransportProtocol
@@ -113,6 +121,12 @@ struct SdpMediaTransportProtocol
             break;
         }
     }
+
+    bool isValidProtocol() const {
+        return contentTypeString == "udp" ||
+               contentTypeString == "RTP/AVP" ||
+               contentTypeString == "RTP/SAVP";
+    }
 };
 
 struct SdpMedia
@@ -120,7 +134,7 @@ struct SdpMedia
     SdpMediaType                mediaType;
     quint16                     port;
     SdpMediaTransportProtocol   transportProtocol;
-    QString                     fmt;//format
+    QString                     fmt;//payload number in ST2110
 
 };
 

@@ -16,6 +16,8 @@ public:
     void sdpSplitTest();
     QString getParserResult();
 
+    void setMediaDetailRegex(const QRegularExpression &newMediaDetailRegex);
+
 private:
     QByteArray sdpRaw;
 
@@ -36,12 +38,17 @@ private:
     QRegularExpression timingRegex;
     QRegularExpression repeatRegex;
 
+    QRegularExpression mediaDetailRegex;
+    QRegularExpression mediaOptionRegex;
+
     void sdpSplitter(const QByteArray&);
 
     void sdpSessionDescriptionParser();
     void sdpTimeDescriptionParser();
+    void sdpMediaDescriptionParser();
 
     void sdpSessionConnectionInfoParser(QString);
+    void sdpSessionAttributesParser(QString);
 
     SDP *sdp;
 

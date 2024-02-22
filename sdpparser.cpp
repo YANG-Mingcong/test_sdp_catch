@@ -30,6 +30,8 @@ SdpParser::SdpParser(QObject *parent, const QByteArray& _datagram)
     timingRegex.setPattern("t=(\\d+) (\\d+)");
     repeatRegex.setPattern("r=(.*)(?=\r\n|$)");
 
+    mediaDetailRegex.setPattern("m=(\\S+) (\\d+) (\\S+)(?: (.*?))?\r\n");
+
     sdp = new SDP;
 
 }
@@ -95,7 +97,7 @@ QString SdpParser::getParserResult()
     result += "    port: " + QString::number(sdp->media.port) + "\n";
     result += "    transportProtocol:\n";
     result += "      contentTypeString: " + sdp->media.transportProtocol.contentTypeString + "\n";
-    result += "    fmt: " + sdp->media.fmt + "\n";
+    result += "    fmt(Payload in ST2110): " + sdp->media.fmt + "\n";
 
     result += "  mediaOptions:\n";
     result += "    iMediaTitle: " + sdp->mediaOptions.iMediaTitle + "\n";
@@ -148,6 +150,8 @@ void SdpParser::sdpSplitter(const QByteArray& _datagram)
 
     this->sdpTimeDescriptionParser();
 
+    this->sdpMediaDescriptionParser();
+
     this->printSDP();
 
 }
@@ -180,42 +184,42 @@ void SdpParser::sdpSessionDescriptionParser()
     // Match session options
     int pos = 0;
     while (pos < sdpSessionDescription.size()) {
-        auto optionMatch = sessionOptionRegex.match(sdpSessionDescription, pos);
-        if (optionMatch.hasMatch()) {
-            QString optionType = optionMatch.captured(1);
-            QString optionValue = optionMatch.captured(2);
+        auto sessionOptionMatch = sessionOptionRegex.match(sdpSessionDescription, pos);
+        if (sessionOptionMatch.hasMatch()) {
+            QString sessionOptionType = sessionOptionMatch.captured(1);
+            QString sessionOptionValue = sessionOptionMatch.captured(2);
 
-            switch (optionType.at(0).toLatin1()) {
+            switch (sessionOptionType.at(0).toLatin1()) {
             case 'i':
-                sdp->sessionOptions.iSessionInformation = optionValue.trimmed();
+                sdp->sessionOptions.iSessionInformation = sessionOptionValue.trimmed();
                 break;
             case 'u':
-                sdp->sessionOptions.uUriOfDescription = optionValue.trimmed();
+                sdp->sessionOptions.uUriOfDescription = sessionOptionValue.trimmed();
                 break;
             case 'e':
-                sdp->sessionOptions.eEmailAddress = optionValue.trimmed();
+                sdp->sessionOptions.eEmailAddress = sessionOptionValue.trimmed();
                 break;
             case 'p':
-                sdp->sessionOptions.pPhoneNumber = optionValue.trimmed();
+                sdp->sessionOptions.pPhoneNumber = sessionOptionValue.trimmed();
                 break;
             case 'c':
-                this->sdpSessionConnectionInfoParser(optionValue); // Implement this function
+                this->sdpSessionConnectionInfoParser(sessionOptionValue);
                 break;
             case 'b':
-                sdp->sessionOptions.bBandwidth = optionValue.trimmed();
+                sdp->sessionOptions.bBandwidth = sessionOptionValue.trimmed();
                 break;
             case 'z':
-                sdp->sessionOptions.zTimeZone = optionValue.trimmed();
+                sdp->sessionOptions.zTimeZone = sessionOptionValue.trimmed();
                 break;
             case 'k':
-                sdp->sessionOptions.kEncryptionKey = optionValue.trimmed();
+                sdp->sessionOptions.kEncryptionKey = sessionOptionValue.trimmed();
                 break;
-            // case 'a':
-            //     parseAttributes(optionValue); // Implement this function
-            //     break;
+            case 'a':
+                this->sdpSessionAttributesParser(sessionOptionValue);
+                break;
             }
 
-            pos = optionMatch.capturedEnd();
+            pos = sessionOptionMatch.capturedEnd();
         } else {
             break;
         }
@@ -238,6 +242,45 @@ void SdpParser::sdpTimeDescriptionParser()
     auto repeatMatch = repeatRegex.match(sdpTimeDescription, pos);
     if (repeatMatch.hasMatch()) {
         sdp->repeatTimes = repeatMatch.captured(1);
+    }
+}
+
+void SdpParser::sdpMediaDescriptionParser()
+{
+    QRegularExpressionMatch mediaMatch = mediaDetailRegex.match(sdpMediaDescription);
+
+    if (mediaMatch.hasMatch()) {
+        // media type
+        QString mediaTypeStr = mediaMatch.captured(1);
+        // port
+        quint16 port = mediaMatch.captured(2).toUInt();
+        // transport protocol
+        QString transportProtocolStr = mediaMatch.captured(3);
+        // format
+        QString fmt = mediaMatch.captured(4);
+
+        // Now you can use these values to populate your SdpMedia structure
+        sdp->media.mediaType.contentTypeString = mediaTypeStr;
+
+        // 验证 contentTypeString 是否合法
+        if (!sdp->media.mediaType.isValidType()) {
+            qDebug() << "Invalid media type: " << sdp->media.mediaType.contentTypeString;
+            // 这里可以处理不合法的情况，例如设置一个默认值
+            sdp->media.mediaType = SdpMediaType(SdpMediaType::Audio);
+        }
+
+        sdp->media.port = port;
+        sdp->media.transportProtocol.contentTypeString = transportProtocolStr;
+        // 验证 contentTypeString 是否合法
+        if (!sdp->media.transportProtocol.isValidProtocol()) {
+            qDebug() << "Invalid transport protocol: " << sdp->media.transportProtocol.contentTypeString;
+            // 这里可以处理不合法的情况，例如设置一个默认值
+            sdp->media.transportProtocol = SdpMediaTransportProtocol(SdpMediaTransportProtocol::RTPAVP);
+        }
+        sdp->media.fmt = fmt;
+
+    } else {
+        qDebug() << "Media Description not matched.";
     }
 }
 
@@ -320,6 +363,22 @@ void SdpParser::sdpSessionConnectionInfoParser(QString _connInfo)
     }
 }
 
+void SdpParser::sdpSessionAttributesParser(QString attributeLine)
+{
+    // Split the attribute line into parts based on the first ':'
+    int colonIndex = attributeLine.indexOf(':');
+    if (colonIndex != -1) {
+        SdpAttributes sessionAttribute;
+        sessionAttribute.attribute = attributeLine.left(colonIndex).trimmed();
+        sessionAttribute.value = attributeLine.mid(colonIndex + 1).trimmed();
+        sdp->sessionOptions.aAttribute.append(sessionAttribute);
+    } else {
+        SdpAttributes sessionAttribute;
+        sessionAttribute.attribute = attributeLine.trimmed();
+        sdp->sessionOptions.aAttribute.append(sessionAttribute);
+    }
+}
+
 void SdpParser::printSDP()
 {
     qDebug() << "SDP:";
@@ -362,7 +421,7 @@ void SdpParser::printSDP()
     qDebug() << "    port:" << sdp->media.port;
     qDebug() << "    transportProtocol:";
     qDebug() << "      contentTypeString:" << sdp->media.transportProtocol.contentTypeString;
-    qDebug() << "    fmt:" << sdp->media.fmt;
+    qDebug() << "    fmt(Payload in ST2110):" << sdp->media.fmt;
     qDebug() << "  mediaOptions:";
     qDebug() << "    iMediaTitle:" << sdp->mediaOptions.iMediaTitle;
     qDebug() << "    cConnectionInformation:";
