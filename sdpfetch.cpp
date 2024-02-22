@@ -20,7 +20,7 @@ SdpFetch::SdpFetch(QObject *parent)
     connect(&udpSocket4, &QUdpSocket::readyRead,
             this, &SdpFetch::processPendingDatagrams);
 
-    sdpRawMapTimeoutSecond = 30;
+    sdpRawMapTimeoutSecond = 120;
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this,
             &SdpFetch::checkTimeout);

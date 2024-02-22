@@ -31,6 +31,10 @@ SdpParser::SdpParser(QObject *parent, const QByteArray& _datagram)
     repeatRegex.setPattern("r=(.*)(?=\r\n|$)");
 
     mediaDetailRegex.setPattern("m=(\\S+) (\\d+) (\\S+)(?: (.*?))?\r\n");
+    mediaOptionRegex.setPattern("([iuecbzka])=(.*?)(?=[iuecbzka]=|$)");
+    mediaOptionRegex.setPatternOptions(QRegularExpression::DotMatchesEverythingOption);
+
+    mediaConnectionRegex.setPattern("([A-Za-z]+)\\s+(IP[46])\\s*([A-Fa-f0-9.:]+)?/?([0-9]+)?/?([0-9]+)?");
 
     sdp = new SDP;
 
@@ -110,12 +114,12 @@ QString SdpParser::getParserResult()
         result += "      connctionTtl: " + QString::number(connectionData.connectionTtl) + "\n";
     }
 
-    result += "    bBandwidth:" + sdp->mediaOptions.bBandwidth + "\n";
-    result += "    kEncryptionKey:" + sdp->mediaOptions.kEncryptionKey + "\n";
+    result += "    bBandwidth: " + sdp->mediaOptions.bBandwidth + "\n";
+    result += "    kEncryptionKey: " + sdp->mediaOptions.kEncryptionKey + "\n";
     result += "    aAttributes: \n";
     for (const auto& attribute : sdp->mediaOptions.aAttribute) {
-        result += "      attribute:" + attribute.attribute + "\n";
-        result += "      value:" + attribute.value + "\n";
+        result += "      attribute: " + attribute.attribute + "\n";
+        result += "      value: " + attribute.value + "\n";
     }
     return result;
 }
@@ -217,6 +221,9 @@ void SdpParser::sdpSessionDescriptionParser()
             case 'a':
                 this->sdpSessionAttributesParser(sessionOptionValue);
                 break;
+            default:
+                qDebug() << "No this Session Option tag - default";
+                break;
             }
 
             pos = sessionOptionMatch.capturedEnd();
@@ -247,7 +254,7 @@ void SdpParser::sdpTimeDescriptionParser()
 
 void SdpParser::sdpMediaDescriptionParser()
 {
-    QRegularExpressionMatch mediaMatch = mediaDetailRegex.match(sdpMediaDescription);
+    auto mediaMatch = mediaDetailRegex.match(sdpMediaDescription);
 
     if (mediaMatch.hasMatch()) {
         // media type
@@ -279,6 +286,56 @@ void SdpParser::sdpMediaDescriptionParser()
         }
         sdp->media.fmt = fmt;
 
+
+
+        // Match media options
+        int pos = 0;
+        while (pos < sdpMediaDescription.size()) {
+            auto mediaOptionMatch = mediaOptionRegex.match(sdpMediaDescription, pos);
+            // qDebug() << "mediaOptionMatch captured \n" << mediaOptionMatch;
+            if (mediaOptionMatch.hasMatch()) {
+                QString mediaOptionType = mediaOptionMatch.captured(1);
+                QString mediaOptionValue = mediaOptionMatch.captured(2);
+
+                switch (mediaOptionType.at(0).toLatin1()) {
+                case 'i':
+                    sdp->mediaOptions.iMediaTitle = mediaOptionValue.trimmed();
+                    break;
+                case 'u':
+                    qDebug() << "No this Media Option tag - u=";
+                    break;
+                case 'e':
+                    qDebug() << "No this Media Option tag - e=";
+                    break;
+                case 'p':
+                    qDebug() << "No this Media Option tag - p=";
+                    break;
+                case 'c':
+                    this->sdpMediaConnectionInfoParser(mediaOptionValue);
+                    break;
+                case 'b':
+                    sdp->mediaOptions.bBandwidth = mediaOptionValue.trimmed();
+                    break;
+                case 'z':
+                    qDebug() << "No this Media Option tag - z=";
+                    break;
+                case 'k':
+                    sdp->mediaOptions.kEncryptionKey = mediaOptionValue.trimmed();
+                    break;
+                case 'a':
+                    this->sdpMediaAttributesParser(mediaOptionValue);
+                    break;
+                default:
+                    qDebug() << "No this Media Option tag - default";
+                    break;
+                }
+
+                pos = mediaOptionMatch.capturedEnd();
+            } else {
+                break;
+            }
+        }
+
     } else {
         qDebug() << "Media Description not matched.";
     }
@@ -286,7 +343,7 @@ void SdpParser::sdpMediaDescriptionParser()
 
 void SdpParser::sdpSessionConnectionInfoParser(QString _connInfo)
 {
-    QRegularExpressionMatch SessionConnectionMatch = sessionConnectionRegex.match(_connInfo);
+    auto SessionConnectionMatch = sessionConnectionRegex.match(_connInfo);
     if (SessionConnectionMatch.hasMatch()) {
 
         QString address = SessionConnectionMatch.captured(3);
@@ -376,6 +433,102 @@ void SdpParser::sdpSessionAttributesParser(QString attributeLine)
         SdpAttributes sessionAttribute;
         sessionAttribute.attribute = attributeLine.trimmed();
         sdp->sessionOptions.aAttribute.append(sessionAttribute);
+    }
+}
+
+void SdpParser::sdpMediaConnectionInfoParser(QString _connInfo)
+{
+    qDebug() << "\n Media Connection Info Str: \n" << _connInfo;
+    auto MediaConnectionMatch = mediaConnectionRegex.match(_connInfo);
+    if (MediaConnectionMatch.hasMatch()) {
+
+        QString address = MediaConnectionMatch.captured(3);
+
+        QHostAddress baseAddress(address);
+
+        if (baseAddress.protocol() == QAbstractSocket::IPv4Protocol) {
+            if(MediaConnectionMatch.captured(5)==""){
+                SdpConnectionData connectionData;
+                connectionData.nettype = MediaConnectionMatch.captured(1);
+                connectionData.addrtype = MediaConnectionMatch.captured(2);
+                connectionData.connectionAddress = baseAddress;
+                if(MediaConnectionMatch.captured(4)!="")
+                {
+                    connectionData.connectionTtl = MediaConnectionMatch.captured(4).toUInt();
+                }
+                else
+                {
+                    connectionData.connectionTtl = -1;
+                }
+                sdp->mediaOptions.cConnectionInformation.append(connectionData);
+            }
+            else if(MediaConnectionMatch.captured(5).toUInt())
+            {
+                int numberOfAddresses = MediaConnectionMatch.captured(5).toUInt();
+
+                for (int i = 0; i < numberOfAddresses; ++i) {
+                    SdpConnectionData connectionData;
+                    connectionData.nettype = MediaConnectionMatch.captured(1);
+                    connectionData.addrtype = MediaConnectionMatch.captured(2);
+                    connectionData.connectionAddress = QHostAddress(baseAddress.toIPv4Address() + i);
+                    if(MediaConnectionMatch.captured(4)!="")
+                    {
+                        connectionData.connectionTtl = MediaConnectionMatch.captured(4).toUInt();
+                    }
+                    else
+                    {
+                        connectionData.connectionTtl = -1;
+                    }
+                    sdp->mediaOptions.cConnectionInformation.append(connectionData);
+                }
+            }
+        } else if (baseAddress.protocol() == QAbstractSocket::IPv6Protocol) {
+
+            if(MediaConnectionMatch.captured(4)==""){
+                SdpConnectionData connectionData;
+                connectionData.nettype = MediaConnectionMatch.captured(1);
+                connectionData.addrtype = MediaConnectionMatch.captured(2);
+                connectionData.connectionAddress = baseAddress;
+                connectionData.connectionTtl = -1;
+
+                sdp->mediaOptions.cConnectionInformation.append(connectionData);
+            }
+            else if(MediaConnectionMatch.captured(4).toUInt())
+            {
+                int numberOfAddresses = MediaConnectionMatch.captured(4).toUInt();
+
+                for (int i = 0; i < numberOfAddresses; ++i) {
+
+                    SdpConnectionData connectionData;
+                    connectionData.nettype = MediaConnectionMatch.captured(1);
+                    connectionData.addrtype = MediaConnectionMatch.captured(2);
+
+                    connectionData.connectionAddress = this->ipv6AddressShift(baseAddress, i);
+                    connectionData.connectionTtl = -1;
+
+                    sdp->mediaOptions.cConnectionInformation.append(connectionData);
+                }
+            }
+        }
+
+    }else{
+        qDebug() << "Media part C infor NOT MATCH: " << _connInfo;
+    }
+}
+
+void SdpParser::sdpMediaAttributesParser(QString attributeLine)
+{
+    // Split the attribute line into parts based on the first ':'
+    int colonIndex = attributeLine.indexOf(':');
+    if (colonIndex != -1) {
+        SdpAttributes mediaAttribute;
+        mediaAttribute.attribute = attributeLine.left(colonIndex).trimmed();
+        mediaAttribute.value = attributeLine.mid(colonIndex + 1).trimmed();
+        sdp->mediaOptions.aAttribute.append(mediaAttribute);
+    } else {
+        SdpAttributes mediaAttribute;
+        mediaAttribute.attribute = attributeLine.trimmed();
+        sdp->mediaOptions.aAttribute.append(mediaAttribute);
     }
 }
 
